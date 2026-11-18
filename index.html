@@ -1,0 +1,1069 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistem Kasir Kantin — POS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"],
+            },
+            colors: {
+              skyAccent: "#0284c7",
+              skyLight: "#0ea5e9",
+              skyBg: "#f0f9ff",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #0284c7;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-skyAccent selection:text-white"
+  >
+    <!-- HEADER & NAVIGASI -->
+    <header
+      class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between"
+      >
+        <!-- Brand / Logo -->
+        <div class="flex items-center gap-3">
+          <div>
+            <h1
+              class="font-bold text-base sm:text-lg tracking-tight text-white"
+            >
+              KANTIN<span class="text-skyLight">Barumba</span>
+            </h1>
+            <p class="text-[11px] text-slate-400 hidden sm:block">
+              Sistem Kasir & Monitoring Stok
+            </p>
+          </div>
+        </div>
+
+        <!-- Navigasi Halaman Hidden (SPA Switcher) -->
+        <nav
+          class="flex items-center gap-2 bg-slate-800 p-1 rounded-xl border border-slate-700"
+        >
+          <button
+            id="nav-kasir"
+            onclick="switchPage('kasir')"
+            class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all bg-skyAccent text-white shadow-sm"
+          >
+            Kasir
+          </button>
+          <button
+            id="nav-stok"
+            onclick="switchPage('stok')"
+            class="px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2"
+          >
+            <span>List Stok</span>
+            <span
+              id="badge-stok-menipis"
+              class="hidden px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full"
+              >0</span
+            >
+          </button>
+        </nav>
+
+        <!-- Tombol Sinkronisasi Data -->
+        <button
+          onclick="fetchProducts(true)"
+          id="btn-sync"
+          title="Sinkronkan Data dari Spreadsheet"
+          class="p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-skyLight hover:border-skyLight/50 transition-all"
+        >
+          <svg
+            id="sync-icon"
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            ></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- KONTEN UTAMA -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <!-- ========================================================= -->
+      <!-- HALAMAN 1: KASIR (POS)                                    -->
+      <!-- ========================================================= -->
+      <section
+        id="page-kasir"
+        class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+      >
+        <!-- Kolom Kiri: Daftar Barang -->
+        <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+          <div class="relative">
+            <input
+              type="text"
+              id="search-kasir"
+              oninput="renderProductsKasir()"
+              placeholder="Cari nama makanan atau minuman..."
+              class="w-full bg-white border border-slate-200 focus:border-skyAccent rounded-xl pl-11 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none shadow-sm transition-all"
+            />
+            <svg
+              class="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              ></path>
+            </svg>
+          </div>
+
+          <div
+            id="product-grid"
+            class="grid grid-cols-2 sm:grid-cols-3 gap-3.5"
+          >
+            <!-- Item Produk dirender oleh JavaScript -->
+          </div>
+        </div>
+
+        <!-- Kolom Kanan: Keranjang Pesanan -->
+        <div
+          class="lg:col-span-5 xl:col-span-4 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col sticky top-22 shadow-lg"
+        >
+          <div
+            class="flex items-center justify-between pb-4 border-b border-slate-100"
+          >
+            <div class="flex items-center gap-2">
+              <h2 class="font-bold text-base text-slate-900">
+                Keranjang Pesanan
+              </h2>
+              <span
+                id="cart-count"
+                class="px-2 py-0.5 text-xs font-mono font-semibold bg-skyBg text-skyAccent rounded-md border border-sky-100"
+                >0</span
+              >
+            </div>
+            <button
+              onclick="clearCart()"
+              class="text-xs text-slate-400 hover:text-rose-500 transition-colors"
+            >
+              Kosongkan
+            </button>
+          </div>
+
+          <div
+            id="cart-items"
+            class="py-4 flex flex-col gap-3 max-h-[380px] overflow-y-auto min-h-[180px]"
+          >
+            <div class="text-center text-slate-400 text-sm my-auto py-8">
+              Belum ada barang dipilih
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-slate-500">Total Tagihan</span>
+              <span
+                id="cart-total"
+                class="font-mono text-xl font-bold text-skyAccent"
+                >Rp 0</span
+              >
+            </div>
+            <button
+              id="btn-open-payment"
+              onclick="openPaymentModal()"
+              disabled
+              class="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-skyAccent text-white hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-skyAccent/20"
+            >
+              Pembayaran
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- HALAMAN 2: LIST STOK BARANG (HIDDEN PAGE)                 -->
+      <!-- ========================================================= -->
+      <section id="page-stok" class="hidden flex-col gap-5">
+        <div
+          class="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm"
+        >
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">
+              Monitoring Stok Barang
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Batas peringatan stok menipis global:
+              <span class="text-amber-500 font-semibold">&le; 5 item</span>
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative">
+              <input
+                type="text"
+                id="search-stok"
+                oninput="renderStockList()"
+                placeholder="Cari barang..."
+                class="w-full sm:w-56 bg-slate-50 border border-slate-200 focus:border-skyAccent rounded-xl pl-9 pr-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none"
+              />
+              <svg
+                class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+            </div>
+
+            <select
+              id="sort-stok"
+              onchange="renderStockList()"
+              class="bg-slate-50 border border-slate-200 focus:border-skyAccent rounded-xl px-3 py-2 text-sm text-slate-700 outline-none"
+            >
+              <option value="stok-asc">Urutkan: Stok Paling Sedikit</option>
+              <option value="nama-asc">Urutkan: Nama (A - Z)</option>
+              <option value="nama-desc">Urutkan: Nama (Z - A)</option>
+            </select>
+          </div>
+        </div>
+
+        <div
+          class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr
+                  class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500"
+                >
+                  <th class="py-3.5 px-5">ID</th>
+                  <th class="py-3.5 px-5">Nama Produk</th>
+                  <th class="py-3.5 px-5">Harga Satuan</th>
+                  <th class="py-3.5 px-5 text-center">Sisa Stok</th>
+                  <th class="py-3.5 px-5 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody
+                id="stock-table-body"
+                class="divide-y divide-slate-100 text-sm"
+              >
+                <!-- Baris stok -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- MODAL PEMBAYARAN                                          -->
+    <!-- ========================================================= -->
+    <div
+      id="payment-modal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4"
+    >
+      <div
+        class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all"
+      >
+        <div
+          class="flex items-center justify-between pb-4 border-b border-slate-100"
+        >
+          <h3 class="font-bold text-lg text-slate-900">Pembayaran Tunai</h3>
+          <button
+            onclick="closePaymentModal()"
+            class="text-slate-400 hover:text-slate-600 p-1"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="py-5 flex flex-col gap-4">
+          <div
+            class="bg-skyBg border border-sky-100 rounded-xl p-4 flex items-center justify-between"
+          >
+            <span class="text-sm text-slate-600">Total Belanja</span>
+            <span
+              id="modal-total"
+              class="font-mono text-2xl font-bold text-skyAccent"
+              >Rp 0</span
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5"
+              >Nominal Uang Diterima (Rp)</label
+            >
+            <input
+              type="text"
+              id="input-bayar"
+              inputmode="numeric"
+              placeholder="0"
+              oninput="handlePaymentInput(this)"
+              class="w-full bg-slate-50 border border-slate-200 focus:border-skyAccent rounded-xl px-4 py-3 font-mono text-xl font-bold text-slate-800 outline-none transition-all"
+            />
+            <p
+              id="error-uang-kurang"
+              class="hidden text-xs text-rose-500 mt-1.5 font-medium"
+            >
+              Uang kurang dari total belanja
+            </p>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2">
+            <button
+              type="button"
+              onclick="setQuickCash('exact')"
+              class="py-2 px-2 rounded-lg bg-skyBg border border-sky-200 text-skyAccent text-xs font-semibold hover:bg-skyAccent hover:text-white transition-all"
+            >
+              Uang Pas
+            </button>
+            <button
+              type="button"
+              onclick="setQuickCash(10000)"
+              class="py-2 px-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-mono hover:border-skyAccent transition-all"
+            >
+              10.000
+            </button>
+            <button
+              type="button"
+              onclick="setQuickCash(20000)"
+              class="py-2 px-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-mono hover:border-skyAccent transition-all"
+            >
+              20.000
+            </button>
+            <button
+              type="button"
+              onclick="setQuickCash(50000)"
+              class="py-2 px-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-mono hover:border-skyAccent transition-all"
+            >
+              50.000
+            </button>
+          </div>
+
+          <div
+            class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between mt-1"
+          >
+            <span class="text-sm text-slate-600">Kembalian</span>
+            <span
+              id="modal-kembalian"
+              class="font-mono text-lg font-bold text-emerald-600"
+              >Rp 0</span
+            >
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-3">
+          <button
+            type="button"
+            onclick="closePaymentModal()"
+            class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-all"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            id="btn-submit-transaksi"
+            onclick="processTransaction()"
+            disabled
+            class="flex-[2] py-3 rounded-xl bg-skyAccent text-white text-sm font-bold hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md shadow-skyAccent/20"
+          >
+            <span id="btn-submit-text">Selesai & Cetak Struk</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL POP-UP PEMBERITAHUAN (MENGGANTIKAN ALERT)           -->
+    <!-- ========================================================= -->
+    <div
+      id="alert-modal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4"
+    >
+      <div
+        class="bg-white border border-slate-200 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center transform transition-all"
+      >
+        <div
+          id="alert-icon-container"
+          class="w-12 h-12 rounded-full bg-skyBg text-skyAccent flex items-center justify-center mx-auto mb-4 border border-sky-100"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+        </div>
+        <h3 id="alert-title" class="font-bold text-base text-slate-900 mb-1">
+          Pemberitahuan
+        </h3>
+        <p id="alert-message" class="text-sm text-slate-600 mb-6">
+          Pesan pemberitahuan sistem.
+        </p>
+        <button
+          onclick="closeAlertModal()"
+          class="w-full py-2.5 rounded-xl bg-skyAccent text-white text-sm font-semibold hover:bg-sky-600 transition-all shadow-sm"
+        >
+          Mengerti
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- JAVASCRIPT LOGIC                                          -->
+    <!-- ========================================================= -->
+    <script>
+      const GAS_WEB_APP_URL =
+        "https://script.google.com/macros/s/AKfycbz1HbGfTHp9PQwQQ78LFXwFBme69WoAw0NaJDEUnx7YxXjpbSstotjitYnHt80aF6e5-g/exec";
+      const LOW_STOCK_THRESHOLD = 5;
+
+      let products = [];
+      let cart = [];
+      let currentTotal = 0;
+
+      const fallbackProducts = [
+        { id: "P001", nama: "Es Teh Manis", harga: 5000, stok: 20 },
+        { id: "P002", nama: "Nasi Goreng Kantin", harga: 15000, stok: 4 },
+        { id: "P003", nama: "Mie Instan Goreng", harga: 8000, stok: 15 },
+        { id: "P004", nama: "Air Mineral 600ml", harga: 4000, stok: 0 },
+        { id: "P005", nama: "Roti Bakar Coklat", harga: 10000, stok: 3 },
+        { id: "P006", nama: "Kopi Hitam Panas", harga: 5000, stok: 12 },
+      ];
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadInitialData();
+      });
+
+      function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      }
+
+      function parseFormattedNumber(str) {
+        return parseInt(str.replace(/\./g, ""), 10) || 0;
+      }
+
+      // Custom Modal Alert Pengganti Alert Bawaan
+      function showCustomAlert(title, message, isError = false) {
+        document.getElementById("alert-title").textContent = title;
+        document.getElementById("alert-message").textContent = message;
+        const iconContainer = document.getElementById("alert-icon-container");
+
+        if (isError) {
+          iconContainer.className =
+            "w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-4 border border-rose-100";
+          iconContainer.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+        } else {
+          iconContainer.className =
+            "w-12 h-12 rounded-full bg-skyBg text-skyAccent flex items-center justify-center mx-auto mb-4 border border-sky-100";
+          iconContainer.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+        }
+
+        const modal = document.getElementById("alert-modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function closeAlertModal() {
+        const modal = document.getElementById("alert-modal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      function switchPage(page) {
+        const pageKasir = document.getElementById("page-kasir");
+        const pageStok = document.getElementById("page-stok");
+        const navKasir = document.getElementById("nav-kasir");
+        const navStok = document.getElementById("nav-stok");
+
+        if (page === "kasir") {
+          pageKasir.classList.remove("hidden");
+          pageStok.classList.add("hidden");
+
+          navKasir.className =
+            "px-4 py-1.5 rounded-lg text-sm font-semibold transition-all bg-skyAccent text-white shadow-sm";
+          navStok.className =
+            "px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all flex items-center gap-2";
+        } else {
+          pageKasir.classList.add("hidden");
+          pageStok.classList.remove("hidden");
+          pageStok.classList.add("flex");
+
+          navStok.className =
+            "px-4 py-1.5 rounded-lg text-sm font-semibold transition-all bg-skyAccent text-white shadow-sm flex items-center gap-2";
+          navKasir.className =
+            "px-4 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all";
+          renderStockList();
+        }
+      }
+
+      function loadInitialData() {
+        const cached = localStorage.getItem("kantin_products");
+        if (cached) {
+          products = JSON.parse(cached);
+          renderAll();
+        }
+        fetchProducts(false);
+      }
+
+      async function fetchProducts(isManualSync = false) {
+        const syncIcon = document.getElementById("sync-icon");
+        if (isManualSync)
+          syncIcon.classList.add("animate-spin", "text-skyLight");
+
+        if (GAS_WEB_APP_URL === "URL_WEB_APP_GAS_ANDA") {
+          if (products.length === 0) {
+            // Menerapkan parsing integer agar harga bersih dari karakter tak diinginkan / angka 0 di depan
+            products = fallbackProducts.map((item) => ({
+              id: item.id,
+              nama: item.nama,
+              harga: parseInt(item.harga, 10) || 0,
+              stok: parseInt(item.stok, 10) || 0,
+            }));
+            localStorage.setItem("kantin_products", JSON.stringify(products));
+          }
+          renderAll();
+          if (isManualSync)
+            setTimeout(
+              () => syncIcon.classList.remove("animate-spin", "text-skyLight"),
+              500,
+            );
+          return;
+        }
+
+        try {
+          const res = await fetch(GAS_WEB_APP_URL);
+          const json = await res.json();
+          if (json.status === "success") {
+            // Menerapkan parsing integer pada data dari Google Sheets
+            products = json.data.map((item) => ({
+              id: item.id,
+              nama: item.nama,
+              harga: parseInt(item.harga, 10) || 0,
+              stok: parseInt(item.stok, 10) || 0,
+            }));
+            localStorage.setItem("kantin_products", JSON.stringify(products));
+            renderAll();
+          }
+        } catch (err) {
+          console.error("Gagal mengambil data produk:", err);
+          if (products.length === 0) {
+            products = fallbackProducts.map((item) => ({
+              id: item.id,
+              nama: item.nama,
+              harga: parseInt(item.harga, 10) || 0,
+              stok: parseInt(item.stok, 10) || 0,
+            }));
+            renderAll();
+          }
+        } finally {
+          if (isManualSync)
+            syncIcon.classList.remove("animate-spin", "text-skyLight");
+        }
+      }
+
+      function renderAll() {
+        renderProductsKasir();
+        renderStockList();
+        updateLowStockBadge();
+      }
+
+      function updateLowStockBadge() {
+        const lowCount = products.filter(
+          (p) => p.stok <= LOW_STOCK_THRESHOLD,
+        ).length;
+        const badge = document.getElementById("badge-stok-menipis");
+        if (lowCount > 0) {
+          badge.textContent = lowCount;
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+      }
+
+      function renderProductsKasir() {
+        const query = document
+          .getElementById("search-kasir")
+          .value.toLowerCase();
+        const grid = document.getElementById("product-grid");
+        grid.innerHTML = "";
+
+        const filtered = products.filter((p) =>
+          p.nama.toLowerCase().includes(query),
+        );
+
+        if (filtered.length === 0) {
+          grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 text-sm">Produk tidak ditemukan</div>`;
+          return;
+        }
+
+        filtered.forEach((item) => {
+          const isOutOfStock = item.stok <= 0;
+          const inCart = cart.find((c) => c.id === item.id);
+          const qtyInCart = inCart ? inCart.qty : 0;
+
+          const card = document.createElement("div");
+          card.className = `bg-white border ${qtyInCart > 0 ? "border-skyAccent ring-1 ring-skyAccent/30" : "border-slate-200"} rounded-2xl p-4 flex flex-col justify-between transition-all shadow-sm ${isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover:border-skyAccent cursor-pointer active:scale-[0.98]"}`;
+
+          if (!isOutOfStock) {
+            card.onclick = () => addToCart(item.id);
+          }
+
+          card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">${item.id}</span>
+              <span class="text-[11px] font-medium ${item.stok === 0 ? "text-rose-500" : item.stok <= LOW_STOCK_THRESHOLD ? "text-amber-500" : "text-slate-500"}">
+                Stok: ${item.stok}
+              </span>
+            </div>
+            <h3 class="font-semibold text-sm text-slate-900 line-clamp-2 mb-3">${item.nama}</h3>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+            <span class="font-mono font-bold text-sm text-skyAccent">Rp ${formatNumber(item.harga)}</span>
+            ${qtyInCart > 0 ? `<span class="w-6 h-6 rounded-full bg-skyAccent text-white font-bold text-xs flex items-center justify-center shadow-sm">${qtyInCart}</span>` : ""}
+          </div>
+        `;
+          grid.appendChild(card);
+        });
+      }
+
+      function addToCart(productId) {
+        const product = products.find((p) => p.id === productId);
+        if (!product || product.stok <= 0) return;
+
+        const existing = cart.find((c) => c.id === productId);
+        if (existing) {
+          if (existing.qty < product.stok) {
+            existing.qty++;
+          }
+        } else {
+          cart.push({
+            id: product.id,
+            nama: product.nama,
+            harga: product.harga,
+            qty: 1,
+          });
+        }
+        updateCartUI();
+        renderProductsKasir();
+      }
+
+      function updateQty(productId, delta) {
+        const index = cart.findIndex((c) => c.id === productId);
+        if (index === -1) return;
+
+        const product = products.find((p) => p.id === productId);
+        const newQty = cart[index].qty + delta;
+
+        if (newQty <= 0) {
+          cart.splice(index, 1);
+        } else if (product && newQty <= product.stok) {
+          cart[index].qty = newQty;
+        }
+
+        updateCartUI();
+        renderProductsKasir();
+      }
+
+      function clearCart() {
+        cart = [];
+        updateCartUI();
+        renderProductsKasir();
+      }
+
+      function updateCartUI() {
+        const container = document.getElementById("cart-items");
+        const countEl = document.getElementById("cart-count");
+        const totalEl = document.getElementById("cart-total");
+        const btnPay = document.getElementById("btn-open-payment");
+
+        const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+        currentTotal = cart.reduce(
+          (sum, item) => sum + item.harga * item.qty,
+          0,
+        );
+
+        countEl.textContent = totalItems;
+        totalEl.textContent = `Rp ${formatNumber(currentTotal)}`;
+        btnPay.disabled = cart.length === 0;
+
+        if (cart.length === 0) {
+          container.innerHTML = `<div class="text-center text-slate-400 text-sm my-auto py-8">Belum ada barang dipilih</div>`;
+          return;
+        }
+
+        container.innerHTML = "";
+        cart.forEach((item) => {
+          const row = document.createElement("div");
+          row.className =
+            "bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-3 shadow-2xs";
+          row.innerHTML = `
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-medium text-slate-900 truncate">${item.nama}</h4>
+            <p class="text-xs font-mono text-skyAccent mt-0.5">Rp ${formatNumber(item.harga * item.qty)}</p>
+          </div>
+          <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-lg p-1 shadow-2xs">
+            <button onclick="updateQty('${item.id}', -1)" class="w-6 h-6 rounded flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-bold">-</button>
+            <span class="font-mono text-xs font-semibold w-5 text-center text-slate-800">${item.qty}</span>
+            <button onclick="updateQty('${item.id}', 1)" class="w-6 h-6 rounded flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-skyAccent font-bold">+</button>
+          </div>
+        `;
+          container.appendChild(row);
+        });
+      }
+
+      function renderStockList() {
+        const query = document
+          .getElementById("search-stok")
+          .value.toLowerCase();
+        const sortBy = document.getElementById("sort-stok").value;
+        const tbody = document.getElementById("stock-table-body");
+
+        let filtered = products.filter(
+          (p) =>
+            p.nama.toLowerCase().includes(query) ||
+            p.id.toLowerCase().includes(query),
+        );
+
+        filtered.sort((a, b) => {
+          if (sortBy === "stok-asc") return a.stok - b.stok;
+          if (sortBy === "nama-asc") return a.nama.localeCompare(b.nama);
+          if (sortBy === "nama-desc") return b.nama.localeCompare(a.nama);
+          return 0;
+        });
+
+        tbody.innerHTML = "";
+        filtered.forEach((item) => {
+          let statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">Aman</span>`;
+          if (item.stok === 0) {
+            statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200">Habis</span>`;
+          } else if (item.stok <= LOW_STOCK_THRESHOLD) {
+            statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200">Menipis</span>`;
+          }
+
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+          <td class="py-3.5 px-5 font-mono text-xs text-slate-500">${item.id}</td>
+          <td class="py-3.5 px-5 font-medium text-slate-900">${item.nama}</td>
+          <td class="py-3.5 px-5 font-mono text-slate-700">Rp ${formatNumber(item.harga)}</td>
+          <td class="py-3.5 px-5 text-center font-mono font-bold ${item.stok === 0 ? "text-rose-500" : item.stok <= LOW_STOCK_THRESHOLD ? "text-amber-500" : "text-slate-800"}">${item.stok}</td>
+          <td class="py-3.5 px-5 text-right">${statusBadge}</td>
+        `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function openPaymentModal() {
+        const modal = document.getElementById("payment-modal");
+        const inputBayar = document.getElementById("input-bayar");
+
+        document.getElementById("modal-total").textContent =
+          `Rp ${formatNumber(currentTotal)}`;
+        inputBayar.value = "";
+        validatePayment(0);
+
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        setTimeout(() => inputBayar.focus(), 100);
+      }
+
+      function closePaymentModal() {
+        const modal = document.getElementById("payment-modal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      function handlePaymentInput(input) {
+        let raw = input.value.replace(/\D/g, "");
+        let numericVal = parseInt(raw, 10) || 0;
+
+        input.value = numericVal > 0 ? formatNumber(numericVal) : "";
+        validatePayment(numericVal);
+      }
+
+      function setQuickCash(amount) {
+        const input = document.getElementById("input-bayar");
+        const val = amount === "exact" ? currentTotal : amount;
+        input.value = formatNumber(val);
+        validatePayment(val);
+      }
+
+      function validatePayment(bayarAmount) {
+        const input = document.getElementById("input-bayar");
+        const errorText = document.getElementById("error-uang-kurang");
+        const kembalianEl = document.getElementById("modal-kembalian");
+        const btnSubmit = document.getElementById("btn-submit-transaksi");
+
+        if (bayarAmount < currentTotal) {
+          if (bayarAmount > 0) {
+            input.classList.remove(
+              "border-slate-200",
+              "focus:border-skyAccent",
+            );
+            input.classList.add("border-rose-500", "focus:border-rose-500");
+            errorText.classList.remove("hidden");
+          } else {
+            input.classList.add("border-slate-200", "focus:border-skyAccent");
+            input.classList.remove("border-rose-500", "focus:border-rose-500");
+            errorText.classList.add("hidden");
+          }
+          kembalianEl.textContent = "Rp 0";
+          btnSubmit.disabled = true;
+        } else {
+          input.classList.add("border-slate-200", "focus:border-skyAccent");
+          input.classList.remove("border-rose-500", "focus:border-rose-500");
+          errorText.classList.add("hidden");
+
+          const kembalian = bayarAmount - currentTotal;
+          kembalianEl.textContent = `Rp ${formatNumber(kembalian)}`;
+          btnSubmit.disabled = false;
+        }
+      }
+
+      async function processTransaction() {
+        const bayarVal = parseFormattedNumber(
+          document.getElementById("input-bayar").value,
+        );
+        if (bayarVal < currentTotal) return;
+
+        const kembalianVal = bayarVal - currentTotal;
+        const btnSubmit = document.getElementById("btn-submit-transaksi");
+        const btnText = document.getElementById("btn-submit-text");
+
+        btnSubmit.disabled = true;
+        btnText.textContent = "Memproses...";
+
+        const payload = {
+          total: currentTotal,
+          bayar: bayarVal,
+          kembalian: kembalianVal,
+          items: cart.map((item) => ({
+            id: item.id,
+            nama: item.nama,
+            harga: item.harga,
+            qty: item.qty,
+            subtotal: item.harga * item.qty,
+          })),
+        };
+
+        let trxId = "TRX-" + Date.now();
+
+        if (GAS_WEB_APP_URL !== "URL_WEB_APP_GAS_ANDA") {
+          try {
+            const response = await fetch(GAS_WEB_APP_URL, {
+              method: "POST",
+              body: JSON.stringify(payload),
+            });
+            const result = await response.json();
+            if (result.status === "success") {
+              trxId = result.idTransaksi;
+            } else {
+              showCustomAlert(
+                "Gagal",
+                "Gagal menyimpan transaksi: " + result.message,
+                true,
+              );
+              btnSubmit.disabled = false;
+              btnText.textContent = "Selesai & Cetak Struk";
+              return;
+            }
+          } catch (err) {
+            console.error("Error saat mengirim transaksi:", err);
+            showCustomAlert(
+              "Peringatan",
+              "Terjadi gangguan jaringan. Transaksi dicetak secara lokal.",
+              true,
+            );
+          }
+        }
+
+        cart.forEach((cItem) => {
+          const prod = products.find((p) => p.id === cItem.id);
+          if (prod) prod.stok = Math.max(0, prod.stok - cItem.qty);
+        });
+        localStorage.setItem("kantin_products", JSON.stringify(products));
+
+        // Format detail item sesuai referensi Anda agar rapi saat dicetak
+        let detailString = cart
+          .map(
+            (item) =>
+              `${item.qty}x ${item.nama} (@${formatNumber(Number(item.harga))})`,
+          )
+          .join(", ");
+
+        triggerPrintStruk({
+          id: trxId,
+          nama: "Customer Kantin",
+          total: currentTotal,
+          bayar: bayarVal,
+          kembalian: kembalianVal,
+          detail: "Item: " + detailString,
+        });
+        closePaymentModal();
+        clearCart();
+        renderAll();
+
+        btnSubmit.disabled = false;
+        btnText.textContent = "Selesai & Cetak Struk";
+      }
+
+      // Fungsi Cetak Struk Sesuai Referensi File Anda
+      // Fungsi Cetak Struk Sesuai Referensi & Penambahan Bayar/Kembalian
+      function triggerPrintStruk(data) {
+        const existingIframe = document.getElementById("printFrame");
+        if (existingIframe) existingIframe.remove();
+
+        const iframe = document.createElement("iframe");
+        iframe.id = "printFrame";
+        iframe.style.position = "fixed";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "none";
+        document.body.appendChild(iframe);
+
+        // Render item agar rapi dalam satu baris per produk
+        let itemsHtml = "";
+        cart.forEach((item) => {
+          let subTotalStr = formatNumber(item.harga * item.qty);
+          let itemLine = `${item.qty}x ${item.nama}`;
+          let priceLine = `Rp ${subTotalStr}`;
+
+          itemsHtml += `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32mm;">${itemLine}</span>
+              <span>${priceLine}</span>
+            </div>
+          `;
+        });
+
+        const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                @page { size: 58mm auto; margin: 0; }
+                body {
+                    width: 50mm;
+                    font-family: 'Courier New', Courier, monospace;
+                    font-size: 10px; /* Ukuran font diperkecil agar muat satu baris */
+                    line-height: 1.2;
+                    margin: 0 auto;
+                    padding: 4mm 2mm;
+                    box-sizing: border-box;
+                    color: #000;
+                }
+                .center { text-align: center; }
+                .line { border-bottom: 1px dashed #000; margin: 4px 0; width: 100%; }
+                .bold { font-weight: bold; }
+                .row { display: flex; justify-content: space-between; }
+            </style>
+        </head>
+        <body>
+            <div class="center">
+                <span class="bold" style="font-size: 12px;">KANTIN BARUMBA</span><br>
+                "Struk Pembelian Kantin"
+            </div>
+            <div class="line"></div>
+            ID  : ${data.id}<br>
+            Tgl : ${new Date().toLocaleString("id-ID")}<br>
+            Cust: ${data.nama}<br>
+            <div class="line"></div>
+            <div class="bold" style="margin-bottom: 3px;">Item Pembelian:</div>
+            ${itemsHtml}
+            <div class="line"></div>
+            <div class="row bold">
+                <span>TOTAL :</span>
+                <span>${isNaN(data.total) ? data.total : "Rp " + Number(data.total).toLocaleString("id-ID")}</span>
+            </div>
+            <div class="row">
+                <span>BAYAR :</span>
+                <span>${isNaN(data.bayar) ? data.bayar : "Rp " + Number(data.bayar).toLocaleString("id-ID")}</span>
+            </div>
+            <div class="row">
+                <span>KEMBALI:</span>
+                <span>${isNaN(data.kembalian) ? data.kembalian : "Rp " + Number(data.kembalian).toLocaleString("id-ID")}</span>
+            </div>
+            <div class="line"></div>
+            <div class="center">
+                Terima Kasih!<br>
+                Silahkan Datang Kembali
+            </div>
+            <div class="line"></div>
+        </body>
+        </html>
+      `;
+
+        iframe.contentDocument.write(htmlContent);
+        iframe.contentDocument.close();
+
+        setTimeout(() => {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        }, 500);
+      }
+    </script>
+  </body>
+</html>
