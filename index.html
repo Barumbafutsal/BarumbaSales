@@ -43,6 +43,17 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #0284c7;
       }
+      @keyframes btnProgress {
+        0% {
+          width: 0%;
+        }
+        100% {
+          width: 100%;
+        }
+      }
+      .animate-progress {
+        animation: btnProgress 1.5s infinite linear;
+      }
     </style>
   </head>
   <body
@@ -53,7 +64,7 @@
       class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md"
     >
       <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between"
+        class="max-w-7xl mx-auto px-4 sm:px-6 min-h-16 py-2 flex flex-wrap items-center justify-between gap-2"
       >
         <!-- Brand / Logo -->
         <div class="flex items-center gap-3">
@@ -94,28 +105,44 @@
           </button>
         </nav>
 
-        <!-- Tombol Sinkronisasi Data -->
-        <button
-          onclick="fetchProducts(true)"
-          id="btn-sync"
-          title="Sinkronkan Data dari Spreadsheet"
-          class="p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-skyLight hover:border-skyLight/50 transition-all"
-        >
-          <svg
-            id="sync-icon"
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <!-- Aksi Kanan Atas: Bluetooth + Sinkronisasi Data -->
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            id="btHeaderBtn"
+            onclick="openBtModal()"
+            class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 transition-all"
+            title="Pengaturan Koneksi Printer Bluetooth POS58B"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            ></path>
-          </svg>
-        </button>
+            <span
+              id="btStatusDot"
+              class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"
+            ></span>
+            <span id="btHeaderLabel">BT: Terputus</span>
+          </button>
+
+          <button
+            onclick="fetchProducts(true)"
+            id="btn-sync"
+            title="Sinkronkan Data dari Spreadsheet"
+            class="p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-skyLight hover:border-skyLight/50 transition-all"
+          >
+            <svg
+              id="sync-icon"
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              ></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -130,27 +157,38 @@
       >
         <!-- Kolom Kiri: Daftar Barang -->
         <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
-          <div class="relative">
-            <input
-              type="text"
-              id="search-kasir"
-              oninput="renderProductsKasir()"
-              placeholder="Cari nama makanan atau minuman..."
-              class="w-full bg-white border border-slate-200 focus:border-skyAccent rounded-xl pl-11 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none shadow-sm transition-all"
-            />
-            <svg
-              class="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="relative flex-1 min-w-[200px]">
+              <input
+                type="text"
+                id="search-kasir"
+                oninput="renderProductsKasir()"
+                placeholder="Cari nama makanan atau minuman..."
+                class="w-full bg-white border border-slate-200 focus:border-skyAccent rounded-xl pl-11 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none shadow-sm transition-all"
+              />
+              <svg
+                class="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+            </div>
+            <button
+              type="button"
+              id="btnReprintLast"
+              onclick="reprintLastReceipt()"
+              disabled
+              class="px-3.5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              ></path>
-            </svg>
+              🖨️ Cetak Ulang Terakhir
+            </button>
           </div>
 
           <div
@@ -298,6 +336,106 @@
     </main>
 
     <!-- ========================================================= -->
+    <!-- MODAL POPUP KONEKSI PRINTER BLUETOOTH                     -->
+    <!-- ========================================================= -->
+    <div
+      id="btModal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4"
+    >
+      <div
+        class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl"
+      >
+        <div
+          class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4"
+        >
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">
+              Koneksi Printer Bluetooth
+            </h3>
+          </div>
+          <button
+            type="button"
+            onclick="closeBtModal()"
+            class="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="space-y-4 text-sm">
+          <div
+            class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5"
+          >
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600 font-medium">Status Koneksi:</span>
+              <span
+                id="btModalStatusBadge"
+                class="px-2.5 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700"
+                >Terputus</span
+              >
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600 font-medium"
+                >Perangkat Tersimpan:</span
+              >
+              <span id="btSavedDeviceName" class="font-semibold text-slate-800"
+                >-</span
+              >
+            </div>
+            <div class="flex justify-between items-center"></div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1"
+              >Jalur Koneksi</label
+            >
+            <select
+              id="btTransportMode"
+              onchange="updateBtTransportConfig()"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-skyAccent"
+            >
+              <option value="auto">
+                Otomatis (Bridge Lokal / Web BT + Fallback Struk)
+              </option>
+              <option value="bridge">
+                Local Print Bridge (SPP / Bluetooth Classic Android)
+              </option>
+              <option value="web_bluetooth">
+                Web Bluetooth API (BLE / Perangkat Kompatibel)
+              </option>
+            </select>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button
+              type="button"
+              id="btnConnectBt"
+              onclick="connectBluetoothPrinter(false)"
+              class="flex-1 py-2.5 px-4 bg-skyAccent hover:bg-sky-600 text-white rounded-xl font-bold shadow transition"
+            >
+              Hubungkan
+            </button>
+            <button
+              type="button"
+              id="btnDisconnectBt"
+              onclick="disconnectBluetoothPrinter()"
+              class="py-2.5 px-4 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-semibold transition"
+            >
+              Putuskan
+            </button>
+            <button
+              type="button"
+              onclick="testPrintBluetooth()"
+              class="w-full py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow transition"
+            >
+              Tes Print
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
     <!-- MODAL PEMBAYARAN                                          -->
     <!-- ========================================================= -->
     <div
@@ -312,6 +450,7 @@
         >
           <h3 class="font-bold text-lg text-slate-900">Pembayaran Tunai</h3>
           <button
+            id="btn-close-payment"
             onclick="closePaymentModal()"
             class="text-slate-400 hover:text-slate-600 p-1"
           >
@@ -409,8 +548,9 @@
         <div class="pt-2 flex gap-3">
           <button
             type="button"
+            id="btn-cancel-payment"
             onclick="closePaymentModal()"
-            class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-all"
+            class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-all disabled:opacity-50"
           >
             Batal
           </button>
@@ -419,16 +559,22 @@
             id="btn-submit-transaksi"
             onclick="processTransaction()"
             disabled
-            class="flex-[2] py-3 rounded-xl bg-skyAccent text-white text-sm font-bold hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md shadow-skyAccent/20"
+            class="relative overflow-hidden flex-[2] py-3 rounded-xl bg-skyAccent text-white text-sm font-bold hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md shadow-skyAccent/20"
           >
-            <span id="btn-submit-text">Selesai & Cetak Struk</span>
+            <div
+              id="btn-submit-progress"
+              class="hidden absolute top-0 left-0 bottom-0 bg-white/30 animate-progress"
+            ></div>
+            <span id="btn-submit-text" class="relative z-10"
+              >Selesai & Cetak Struk</span
+            >
           </button>
         </div>
       </div>
     </div>
 
     <!-- ========================================================= -->
-    <!-- MODAL POP-UP PEMBERITAHUAN (MENGGANTIKAN ALERT)           -->
+    <!-- MODAL POP-UP PEMBERITAHUAN & RETRY PRINT                  -->
     <!-- ========================================================= -->
     <div
       id="alert-modal"
@@ -461,26 +607,42 @@
         <p id="alert-message" class="text-sm text-slate-600 mb-6">
           Pesan pemberitahuan sistem.
         </p>
-        <button
-          onclick="closeAlertModal()"
-          class="w-full py-2.5 rounded-xl bg-skyAccent text-white text-sm font-semibold hover:bg-sky-600 transition-all shadow-sm"
-        >
-          Mengerti
-        </button>
+        <div id="alert-buttons" class="flex justify-center flex-wrap gap-2">
+          <button
+            onclick="closeAlertModal()"
+            class="w-full py-2.5 rounded-xl bg-skyAccent text-white text-sm font-semibold hover:bg-sky-600 transition-all shadow-sm"
+          >
+            Mengerti
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- ========================================================= -->
-    <!-- JAVASCRIPT LOGIC                                          -->
+    <!-- JAVASCRIPT LOGIC & BLUETOOTH PRINT                        -->
     <!-- ========================================================= -->
     <script>
       const GAS_WEB_APP_URL =
         "https://script.google.com/macros/s/AKfycbz1HbGfTHp9PQwQQ78LFXwFBme69WoAw0NaJDEUnx7YxXjpbSstotjitYnHt80aF6e5-g/exec";
       const LOW_STOCK_THRESHOLD = 5;
+      const BT_STORAGE_KEY = "barumba_bt_printer_config_v1";
+      const LAST_RECEIPT_KEY = "barumba_last_receipt_kantin_v1";
 
       let products = [];
       let cart = [];
       let currentTotal = 0;
+      let lastReceiptData = null;
+
+      let btState = {
+        connected: false,
+        connecting: false,
+        mode: "auto", // 'auto' | 'bridge' | 'web_bluetooth'
+        bridgeUrl: "http://127.0.0.1:9100/print",
+        deviceName: "POS58B",
+        autoReconnectOnReload: true,
+        bleDevice: null,
+        bleCharacteristic: null,
+      };
 
       const fallbackProducts = [
         { id: "P001", nama: "Es Teh Manis", harga: 5000, stok: 20 },
@@ -492,8 +654,328 @@
       ];
 
       document.addEventListener("DOMContentLoaded", () => {
+        loadSavedBtConfig();
+        loadSavedLastReceipt();
+        renderBtStatusUI();
         loadInitialData();
+        autoReconnectBluetooth();
       });
+
+      function loadSavedBtConfig() {
+        try {
+          const raw = localStorage.getItem(BT_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            btState.mode = parsed.mode || "auto";
+            btState.bridgeUrl =
+              parsed.bridgeUrl || "http://127.0.0.1:9100/print";
+            btState.deviceName = parsed.deviceName || "POS58B";
+            btState.autoReconnectOnReload =
+              parsed.autoReconnectOnReload !== false;
+          }
+        } catch (e) {
+          console.warn("Gagal membaca konfigurasi BT:", e);
+        }
+      }
+
+      function saveBtConfig() {
+        try {
+          localStorage.setItem(
+            BT_STORAGE_KEY,
+            JSON.stringify({
+              mode: btState.mode,
+              bridgeUrl: btState.bridgeUrl,
+              deviceName: btState.deviceName,
+              autoReconnectOnReload: btState.autoReconnectOnReload,
+            }),
+          );
+        } catch (e) {
+          console.warn("Gagal menyimpan konfigurasi BT:", e);
+        }
+      }
+
+      function loadSavedLastReceipt() {
+        try {
+          const raw = localStorage.getItem(LAST_RECEIPT_KEY);
+          if (raw) {
+            lastReceiptData = JSON.parse(raw);
+            const btn = document.getElementById("btnReprintLast");
+            if (btn) btn.disabled = false;
+          }
+        } catch (e) {
+          console.warn("Gagal memuat struk terakhir kantin:", e);
+        }
+      }
+
+      function setLastReceipt(data) {
+        lastReceiptData = { ...data };
+        try {
+          localStorage.setItem(
+            LAST_RECEIPT_KEY,
+            JSON.stringify(lastReceiptData),
+          );
+        } catch (e) {
+          console.warn("Gagal menyimpan struk terakhir kantin:", e);
+        }
+        const btn = document.getElementById("btnReprintLast");
+        if (btn) btn.disabled = false;
+      }
+
+      function renderBtStatusUI() {
+        const dot = document.getElementById("btStatusDot");
+        const label = document.getElementById("btHeaderLabel");
+        const badge = document.getElementById("btModalStatusBadge");
+        const savedName = document.getElementById("btSavedDeviceName");
+        const modeSelect = document.getElementById("btTransportMode");
+        const bridgeInput = document.getElementById("btBridgeUrlInput");
+
+        if (modeSelect) modeSelect.value = btState.mode;
+        if (bridgeInput) bridgeInput.value = btState.bridgeUrl;
+        if (savedName) savedName.textContent = btState.deviceName || "POS58B";
+
+        if (btState.connecting) {
+          dot.className =
+            "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse inline-block";
+          label.textContent = "BT: Menghubungkan...";
+          if (badge) {
+            badge.className =
+              "px-2.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800";
+            badge.textContent = "Menghubungkan...";
+          }
+        } else if (btState.connected) {
+          dot.className =
+            "w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block";
+          label.textContent = `BT: Terhubung (${btState.deviceName})`;
+          if (badge) {
+            badge.className =
+              "px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800";
+            badge.textContent = `Terhubung (${btState.deviceName})`;
+          }
+        } else {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 inline-block";
+          label.textContent = "BT: Terputus";
+          if (badge) {
+            badge.className =
+              "px-2.5 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700";
+            badge.textContent = "Terputus";
+          }
+        }
+      }
+
+      function openBtModal() {
+        renderBtStatusUI();
+        const modal = document.getElementById("btModal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function closeBtModal() {
+        const modal = document.getElementById("btModal");
+        modal.classList.remove("flex");
+        modal.classList.add("hidden");
+      }
+
+      function updateBtTransportConfig() {
+        const modeSelect = document.getElementById("btTransportMode");
+        const bridgeInput = document.getElementById("btBridgeUrlInput");
+        if (modeSelect) btState.mode = modeSelect.value;
+        if (bridgeInput && bridgeInput.value.trim()) {
+          btState.bridgeUrl = bridgeInput.value.trim();
+        }
+        saveBtConfig();
+      }
+
+      async function checkBridgeHealth() {
+        if (!btState.bridgeUrl) return false;
+        try {
+          const healthUrl = btState.bridgeUrl.replace(/\/print\/?$/, "/status");
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 1500);
+          const res = await fetch(healthUrl, {
+            method: "GET",
+            signal: controller.signal,
+          });
+          clearTimeout(timer);
+          if (!res.ok) return false;
+          const info = await res.json().catch(() => ({}));
+          if (info.printerName) btState.deviceName = info.printerName;
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      async function autoReconnectBluetooth() {
+        if (!btState.autoReconnectOnReload) return;
+        btState.connecting = true;
+        renderBtStatusUI();
+
+        const bridgeAlive = await checkBridgeHealth();
+        if (bridgeAlive) {
+          btState.connected = true;
+          btState.connecting = false;
+          saveBtConfig();
+          renderBtStatusUI();
+          return;
+        }
+
+        if (
+          navigator.bluetooth &&
+          typeof navigator.bluetooth.getDevices === "function"
+        ) {
+          try {
+            const devices = await navigator.bluetooth.getDevices();
+            const target =
+              devices.find((d) =>
+                (d.name || "").toUpperCase().includes("POS58"),
+              ) || devices[0];
+            if (target && target.gatt) {
+              btState.deviceName = target.name || "POS58B";
+              btState.bleDevice = target;
+              await target.gatt.connect();
+              btState.connected = true;
+              btState.connecting = false;
+              saveBtConfig();
+              renderBtStatusUI();
+              return;
+            }
+          } catch (e) {
+            console.debug("Auto-reconnect BLE dilewati:", e);
+          }
+        }
+
+        btState.connected = false;
+        btState.connecting = false;
+        renderBtStatusUI();
+      }
+
+      async function connectBluetoothPrinter(silent = false) {
+        updateBtTransportConfig();
+        btState.connecting = true;
+        renderBtStatusUI();
+
+        try {
+          if (btState.mode === "bridge" || btState.mode === "auto") {
+            const alive = await checkBridgeHealth();
+            if (alive) {
+              btState.connected = true;
+              btState.connecting = false;
+              saveBtConfig();
+              renderBtStatusUI();
+              if (!silent) {
+                showCustomAlert(
+                  "Terhubung",
+                  `Printer ${btState.deviceName} siap cetak otomatis via Bluetooth Bridge (1 rangkap).`,
+                  false,
+                );
+              }
+              return true;
+            }
+            if (btState.mode === "bridge") {
+              throw new Error(
+                "Local Print Bridge tidak terdeteksi. Pastikan aplikasi bridge SPP di Android aktif.",
+              );
+            }
+          }
+
+          if (
+            (btState.mode === "web_bluetooth" || btState.mode === "auto") &&
+            navigator.bluetooth
+          ) {
+            const device = await navigator.bluetooth.requestDevice({
+              acceptAllDevices: true,
+              optionalServices: [
+                "000018f0-0000-1000-8000-00805f9b34fb",
+                "e7810a71-73ae-499d-8c15-faa9aef0c3f2",
+              ],
+            });
+            btState.bleDevice = device;
+            btState.deviceName = device.name || "POS58B";
+            device.addEventListener("gattserverdisconnected", () => {
+              btState.connected = false;
+              btState.bleCharacteristic = null;
+              renderBtStatusUI();
+            });
+
+            const server = await device.gatt.connect();
+            const services = await server.getPrimaryServices();
+            for (const service of services) {
+              const chars = await service.getCharacteristics();
+              const writable = chars.find(
+                (c) => c.properties.write || c.properties.writeWithoutResponse,
+              );
+              if (writable) {
+                btState.bleCharacteristic = writable;
+                break;
+              }
+            }
+
+            btState.connected = true;
+            btState.connecting = false;
+            saveBtConfig();
+            renderBtStatusUI();
+            if (!silent) {
+              showCustomAlert(
+                "Terhubung",
+                `Perangkat ${btState.deviceName} berhasil dihubungkan.`,
+                false,
+              );
+            }
+            return true;
+          }
+
+          throw new Error(
+            "Jalur Bluetooth belum aktif. Aktifkan Local Print Bridge SPP di Android atau gunakan mode Otomatis.",
+          );
+        } catch (error) {
+          btState.connected = false;
+          btState.connecting = false;
+          renderBtStatusUI();
+          if (!silent) {
+            showCustomAlert("Koneksi Gagal", error.message, true);
+          }
+          return false;
+        }
+      }
+
+      function disconnectBluetoothPrinter() {
+        try {
+          if (
+            btState.bleDevice &&
+            btState.bleDevice.gatt &&
+            btState.bleDevice.gatt.connected
+          ) {
+            btState.bleDevice.gatt.disconnect();
+          }
+        } catch (e) {
+          console.warn(e);
+        }
+        btState.bleCharacteristic = null;
+        btState.connected = false;
+        btState.connecting = false;
+        renderBtStatusUI();
+      }
+
+      function setKantinSubmitLoading(isLoading) {
+        const btnSubmit = document.getElementById("btn-submit-transaksi");
+        const btnText = document.getElementById("btn-submit-text");
+        const btnProgress = document.getElementById("btn-submit-progress");
+        const btnCancel = document.getElementById("btn-cancel-payment");
+        const btnClose = document.getElementById("btn-close-payment");
+
+        if (btnSubmit) btnSubmit.disabled = isLoading;
+        if (btnCancel) btnCancel.disabled = isLoading;
+        if (btnClose) btnClose.disabled = isLoading;
+        if (btnText) {
+          btnText.textContent = isLoading
+            ? "Memproses & Mencetak..."
+            : "Selesai & Cetak Struk";
+        }
+        if (btnProgress) {
+          if (isLoading) btnProgress.classList.remove("hidden");
+          else btnProgress.classList.add("hidden");
+        }
+      }
 
       function formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -503,11 +985,17 @@
         return parseInt(str.replace(/\./g, ""), 10) || 0;
       }
 
-      // Custom Modal Alert Pengganti Alert Bawaan
-      function showCustomAlert(title, message, isError = false) {
+      function showCustomAlert(
+        title,
+        message,
+        isError = false,
+        retryCallback = null,
+        fallbackCallback = null,
+      ) {
         document.getElementById("alert-title").textContent = title;
         document.getElementById("alert-message").textContent = message;
         const iconContainer = document.getElementById("alert-icon-container");
+        const btnContainer = document.getElementById("alert-buttons");
 
         if (isError) {
           iconContainer.className =
@@ -517,6 +1005,30 @@
           iconContainer.className =
             "w-12 h-12 rounded-full bg-skyBg text-skyAccent flex items-center justify-center mx-auto mb-4 border border-sky-100";
           iconContainer.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+        }
+
+        if (retryCallback) {
+          btnContainer.innerHTML = `
+            <button onclick="closeAlertModal()" class="flex-1 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs sm:text-sm font-semibold transition-all">Tutup</button>
+            <button id="alertRetryBtn" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold shadow-sm transition-all">🔄 Retry Print</button>
+            ${
+              fallbackCallback
+                ? `<button id="alertFallbackBtn" class="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition-all">Cetak via Browser</button>`
+                : ""
+            }
+          `;
+          document.getElementById("alertRetryBtn").onclick = () => {
+            closeAlertModal();
+            retryCallback();
+          };
+          if (fallbackCallback) {
+            document.getElementById("alertFallbackBtn").onclick = () => {
+              closeAlertModal();
+              fallbackCallback();
+            };
+          }
+        } else {
+          btnContainer.innerHTML = `<button onclick="closeAlertModal()" class="w-full py-2.5 rounded-xl bg-skyAccent text-white text-sm font-semibold hover:bg-sky-600 transition-all shadow-sm">Mengerti</button>`;
         }
 
         const modal = document.getElementById("alert-modal");
@@ -573,7 +1085,6 @@
 
         if (GAS_WEB_APP_URL === "URL_WEB_APP_GAS_ANDA") {
           if (products.length === 0) {
-            // Menerapkan parsing integer agar harga bersih dari karakter tak diinginkan / angka 0 di depan
             products = fallbackProducts.map((item) => ({
               id: item.id,
               nama: item.nama,
@@ -595,7 +1106,6 @@
           const res = await fetch(GAS_WEB_APP_URL);
           const json = await res.json();
           if (json.status === "success") {
-            // Menerapkan parsing integer pada data dari Google Sheets
             products = json.data.map((item) => ({
               id: item.id,
               nama: item.nama,
@@ -816,6 +1326,7 @@
       }
 
       function openPaymentModal() {
+        setKantinSubmitLoading(false);
         const modal = document.getElementById("payment-modal");
         const inputBayar = document.getElementById("input-bayar");
 
@@ -830,6 +1341,7 @@
       }
 
       function closePaymentModal() {
+        setKantinSubmitLoading(false);
         const modal = document.getElementById("payment-modal");
         modal.classList.add("hidden");
         modal.classList.remove("flex");
@@ -889,26 +1401,26 @@
         if (bayarVal < currentTotal) return;
 
         const kembalianVal = bayarVal - currentTotal;
-        const btnSubmit = document.getElementById("btn-submit-transaksi");
-        const btnText = document.getElementById("btn-submit-text");
+        const snapshotItems = cart.map((item) => ({
+          id: item.id,
+          nama: item.nama,
+          harga: item.harga,
+          qty: item.qty,
+          subtotal: item.harga * item.qty,
+        }));
+        const snapshotTotal = currentTotal;
 
-        btnSubmit.disabled = true;
-        btnText.textContent = "Memproses...";
+        setKantinSubmitLoading(true);
 
         const payload = {
-          total: currentTotal,
+          total: snapshotTotal,
           bayar: bayarVal,
           kembalian: kembalianVal,
-          items: cart.map((item) => ({
-            id: item.id,
-            nama: item.nama,
-            harga: item.harga,
-            qty: item.qty,
-            subtotal: item.harga * item.qty,
-          })),
+          items: snapshotItems,
         };
 
         let trxId = "TRX-" + Date.now();
+        let networkWarning = "";
 
         if (GAS_WEB_APP_URL !== "URL_WEB_APP_GAS_ANDA") {
           try {
@@ -918,24 +1430,20 @@
             });
             const result = await response.json();
             if (result.status === "success") {
-              trxId = result.idTransaksi;
+              trxId = result.idTransaksi || trxId;
             } else {
+              setKantinSubmitLoading(false);
               showCustomAlert(
                 "Gagal",
                 "Gagal menyimpan transaksi: " + result.message,
                 true,
               );
-              btnSubmit.disabled = false;
-              btnText.textContent = "Selesai & Cetak Struk";
               return;
             }
           } catch (err) {
             console.error("Error saat mengirim transaksi:", err);
-            showCustomAlert(
-              "Peringatan",
-              "Terjadi gangguan jaringan. Transaksi dicetak secara lokal.",
-              true,
-            );
+            networkWarning =
+              "Terjadi gangguan jaringan. Transaksi dicatat secara lokal. ";
           }
         }
 
@@ -945,33 +1453,255 @@
         });
         localStorage.setItem("kantin_products", JSON.stringify(products));
 
-        // Format detail item sesuai referensi Anda agar rapi saat dicetak
-        let detailString = cart
-          .map(
-            (item) =>
-              `${item.qty}x ${item.nama} (@${formatNumber(Number(item.harga))})`,
-          )
-          .join(", ");
-
-        triggerPrintStruk({
+        const receiptPayload = {
           id: trxId,
           nama: "Customer Kantin",
-          total: currentTotal,
+          items: snapshotItems,
+          total: snapshotTotal,
           bayar: bayarVal,
           kembalian: kembalianVal,
-          detail: "Item: " + detailString,
-        });
+          dicetakPada: new Date().toLocaleString("id-ID"),
+        };
+
+        setLastReceipt(receiptPayload);
         closePaymentModal();
         clearCart();
         renderAll();
+        setKantinSubmitLoading(false);
 
-        btnSubmit.disabled = false;
-        btnText.textContent = "Selesai & Cetak Struk";
+        await handleAutoPrintAfterTransaction(
+          receiptPayload,
+          `${networkWarning}Transaksi kantin berhasil diproses!`,
+        );
       }
 
-      // Fungsi Cetak Struk Sesuai Referensi File Anda
-      // Fungsi Cetak Struk Sesuai Referensi & Penambahan Bayar/Kembalian
-      function triggerPrintStruk(data) {
+      function formatRupiah(val) {
+        if (typeof formatNumber === "function") {
+          return "Rp " + formatNumber(val);
+        }
+        return "Rp " + Number(val || 0).toLocaleString("id-ID");
+      }
+
+      function formatAmountOrRaw(val) {
+        const num = Number(val);
+        return Number.isNaN(num) ? val : formatRupiah(num);
+      }
+
+      function buildPlainReceiptText(data) {
+        const LINE_WIDTH = 32; // Standar lebar karakter kertas 58mm
+        const itemsList = Array.isArray(data.items) ? data.items : [];
+
+        const alignLeftRight = (left, right, width = LINE_WIDTH) => {
+          const rightStr = String(right);
+          const maxLeftLen = Math.max(1, width - rightStr.length - 1);
+          let leftStr = String(left);
+
+          if (leftStr.length > maxLeftLen) {
+            leftStr =
+              maxLeftLen > 1
+                ? leftStr.slice(0, maxLeftLen - 1) + "…"
+                : leftStr.slice(0, maxLeftLen);
+          }
+
+          const spacesCount = Math.max(
+            1,
+            width - leftStr.length - rightStr.length,
+          );
+          return leftStr + " ".repeat(spacesCount) + rightStr;
+        };
+
+        const lines = [
+          "KANTIN BARUMBA",
+          '"Struk Pembelian Kantin"',
+          "-".repeat(LINE_WIDTH),
+          `ID  : ${data.id}`,
+          `Tgl : ${data.dicetakPada || new Date().toLocaleString("id-ID")}`,
+          `Cust: ${data.nama || "Customer Kantin"}`,
+          "-".repeat(LINE_WIDTH),
+          "Item Pembelian:",
+        ];
+
+        itemsList.forEach((item) => {
+          const sub = Number(item.subtotal ?? item.harga * item.qty) || 0;
+          const leftText = `${item.qty}x ${item.nama}`;
+          const rightText = formatRupiah(sub);
+          lines.push(alignLeftRight(leftText, rightText, LINE_WIDTH));
+        });
+
+        lines.push("-".repeat(LINE_WIDTH));
+        lines.push(
+          alignLeftRight("TOTAL", formatAmountOrRaw(data.total), LINE_WIDTH),
+        );
+        lines.push(
+          alignLeftRight("BAYAR", formatAmountOrRaw(data.bayar), LINE_WIDTH),
+        );
+        lines.push(
+          alignLeftRight(
+            "KEMBALI",
+            formatAmountOrRaw(data.kembalian),
+            LINE_WIDTH,
+          ),
+        );
+        lines.push("-".repeat(LINE_WIDTH));
+        lines.push("Terima Kasih!");
+        lines.push("Silahkan Datang Kembali");
+        lines.push("\n\n");
+
+        return lines.join("\n");
+      }
+
+      function buildReceiptHtml(data) {
+        const itemsList = Array.isArray(data.items) ? data.items : [];
+
+        const itemsHtml = itemsList
+          .map((item) => {
+            const sub = Number(item.subtotal ?? item.harga * item.qty) || 0;
+            const itemLine = `${item.qty}x ${item.nama}`;
+            const priceLine = formatRupiah(sub);
+
+            return `
+        <div class="item-row">
+          <span class="item-name" title="${itemLine}">${itemLine}</span>
+          <span class="item-price">${priceLine}</span>
+        </div>
+      `;
+          })
+          .join("");
+
+        const totalFormatted = formatAmountOrRaw(data.total);
+        const bayarFormatted = formatAmountOrRaw(data.bayar);
+        const kembaliFormatted = formatAmountOrRaw(data.kembalian);
+
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            @page {
+                size: 58mm auto;
+                margin: 0;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                width: 48mm;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 9.5px;
+                line-height: 1.25;
+                margin: 0 auto;
+                padding: 3mm 1mm;
+                color: #000;
+            }
+            .center { text-align: center; }
+            .line {
+                border-bottom: 1px dashed #000;
+                margin: 4px 0;
+                width: 100%;
+            }
+            .bold { font-weight: bold; }
+            .row, .item-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 6px;
+                margin-bottom: 2px;
+                width: 100%;
+            }
+            .item-name {
+                flex: 1 1 auto;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .item-price {
+                flex: 0 0 auto;
+                white-space: nowrap;
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="center">
+            <span class="bold" style="font-size: 11.5px;">KANTIN BARUMBA</span><br>
+            "Struk Pembelian Kantin"
+        </div>
+        <div class="line"></div>
+        ID  : ${data.id}<br>
+        Tgl : ${data.dicetakPada || new Date().toLocaleString("id-ID")}<br>
+        Cust: ${data.nama || "Customer Kantin"}<br>
+        <div class="line"></div>
+        <div class="bold" style="margin-bottom: 3px;">Item Pembelian:</div>
+        ${itemsHtml}
+        <div class="line"></div>
+        <div class="row bold">
+            <span>TOTAL</span>
+            <span>${totalFormatted}</span>
+        </div>
+        <div class="row">
+            <span>BAYAR</span>
+            <span>${bayarFormatted}</span>
+        </div>
+        <div class="row">
+            <span>KEMBALI</span>
+            <span>${kembaliFormatted}</span>
+        </div>
+        <div class="line"></div>
+        <div class="center">
+            Terima Kasih!<br>
+            Silahkan Datang Kembali
+        </div>
+        <div class="line"></div>
+    </body>
+    </html>
+  `;
+      }
+      async function sendToBluetoothDirect(data) {
+        const plainText = buildPlainReceiptText(data);
+
+        if (btState.mode === "bridge" || btState.mode === "auto") {
+          const alive = await checkBridgeHealth();
+          if (alive) {
+            const res = await fetch(btState.bridgeUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                printerName: btState.deviceName,
+                copies: 1,
+                text: plainText,
+                receipt: data,
+              }),
+            });
+            if (!res.ok) {
+              throw new Error("Bridge gagal mengirim data ke printer.");
+            }
+            btState.connected = true;
+            renderBtStatusUI();
+            return true;
+          }
+          if (btState.mode === "bridge") {
+            throw new Error("Bridge Bluetooth tidak aktif.");
+          }
+        }
+
+        if (btState.bleCharacteristic) {
+          const encoder = new TextEncoder();
+          const bytes = encoder.encode(plainText);
+          const chunkSize = 120;
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            await btState.bleCharacteristic.writeValue(
+              bytes.slice(i, i + chunkSize),
+            );
+          }
+          return true;
+        }
+
+        throw new Error("Koneksi printer Bluetooth tidak aktif.");
+      }
+
+      function triggerPrintStrukHtmlFallback(data) {
         const existingIframe = document.getElementById("printFrame");
         if (existingIframe) existingIframe.remove();
 
@@ -983,86 +1713,154 @@
         iframe.style.border = "none";
         document.body.appendChild(iframe);
 
-        // Render item agar rapi dalam satu baris per produk
-        let itemsHtml = "";
-        cart.forEach((item) => {
-          let subTotalStr = formatNumber(item.harga * item.qty);
-          let itemLine = `${item.qty}x ${item.nama}`;
-          let priceLine = `Rp ${subTotalStr}`;
-
-          itemsHtml += `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32mm;">${itemLine}</span>
-              <span>${priceLine}</span>
-            </div>
-          `;
-        });
-
-        const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                @page { size: 58mm auto; margin: 0; }
-                body {
-                    width: 50mm;
-                    font-family: 'Courier New', Courier, monospace;
-                    font-size: 10px; /* Ukuran font diperkecil agar muat satu baris */
-                    line-height: 1.2;
-                    margin: 0 auto;
-                    padding: 4mm 2mm;
-                    box-sizing: border-box;
-                    color: #000;
-                }
-                .center { text-align: center; }
-                .line { border-bottom: 1px dashed #000; margin: 4px 0; width: 100%; }
-                .bold { font-weight: bold; }
-                .row { display: flex; justify-content: space-between; }
-            </style>
-        </head>
-        <body>
-            <div class="center">
-                <span class="bold" style="font-size: 12px;">KANTIN BARUMBA</span><br>
-                "Struk Pembelian Kantin"
-            </div>
-            <div class="line"></div>
-            ID  : ${data.id}<br>
-            Tgl : ${new Date().toLocaleString("id-ID")}<br>
-            Cust: ${data.nama}<br>
-            <div class="line"></div>
-            <div class="bold" style="margin-bottom: 3px;">Item Pembelian:</div>
-            ${itemsHtml}
-            <div class="line"></div>
-            <div class="row bold">
-                <span>TOTAL :</span>
-                <span>${isNaN(data.total) ? data.total : "Rp " + Number(data.total).toLocaleString("id-ID")}</span>
-            </div>
-            <div class="row">
-                <span>BAYAR :</span>
-                <span>${isNaN(data.bayar) ? data.bayar : "Rp " + Number(data.bayar).toLocaleString("id-ID")}</span>
-            </div>
-            <div class="row">
-                <span>KEMBALI:</span>
-                <span>${isNaN(data.kembalian) ? data.kembalian : "Rp " + Number(data.kembalian).toLocaleString("id-ID")}</span>
-            </div>
-            <div class="line"></div>
-            <div class="center">
-                Terima Kasih!<br>
-                Silahkan Datang Kembali
-            </div>
-            <div class="line"></div>
-        </body>
-        </html>
-      `;
-
-        iframe.contentDocument.write(htmlContent);
+        iframe.contentDocument.write(buildReceiptHtml(data));
         iframe.contentDocument.close();
 
         setTimeout(() => {
           iframe.contentWindow.focus();
           iframe.contentWindow.print();
         }, 500);
+      }
+
+      async function executePrintStruk(data, allowHtmlFallback = false) {
+        const printable = {
+          ...data,
+          dicetakPada: new Date().toLocaleString("id-ID"),
+        };
+        setLastReceipt(printable);
+
+        if (btState.connected || btState.mode === "bridge") {
+          await sendToBluetoothDirect(printable);
+          return "bluetooth";
+        }
+
+        if (allowHtmlFallback) {
+          triggerPrintStrukHtmlFallback(printable);
+          return "html_fallback";
+        }
+
+        throw new Error("Printer Bluetooth belum terkoneksi.");
+      }
+
+      async function handleAutoPrintAfterTransaction(
+        receiptPayload,
+        successMsg,
+      ) {
+        if (!btState.connected && btState.autoReconnectOnReload) {
+          await autoReconnectBluetooth();
+        }
+
+        if (!btState.connected && btState.mode !== "bridge") {
+          showCustomAlert(
+            "Sukses (BT Belum Terhubung)",
+            `${successMsg} Printer Bluetooth belum terkoneksi untuk auto-print.`,
+            false,
+            () => retryPrintReceipt(receiptPayload),
+            () => triggerPrintStrukHtmlFallback(receiptPayload),
+          );
+          return;
+        }
+
+        try {
+          await executePrintStruk(receiptPayload, false);
+          showCustomAlert(
+            "Sukses",
+            `${successMsg} Struk (1 rangkap) otomatis dicetak ke ${btState.deviceName}.`,
+            false,
+          );
+        } catch (err) {
+          btState.connected = false;
+          renderBtStatusUI();
+          showCustomAlert(
+            "Gagal Cetak Otomatis",
+            `${successMsg} Namun print Bluetooth gagal: ${err.message}`,
+            true,
+            () => retryPrintReceipt(receiptPayload),
+            () => triggerPrintStrukHtmlFallback(receiptPayload),
+          );
+        }
+      }
+
+      async function retryPrintReceipt(receiptPayload) {
+        const target = receiptPayload || lastReceiptData;
+        if (!target) {
+          showCustomAlert(
+            "Info",
+            "Tidak ada data struk untuk dicetak ulang.",
+            false,
+          );
+          return;
+        }
+
+        if (!btState.connected) {
+          await connectBluetoothPrinter(true);
+        }
+
+        try {
+          await executePrintStruk(target, false);
+          showCustomAlert(
+            "Berhasil",
+            "Struk (1 rangkap) berhasil dicetak lewat Bluetooth.",
+            false,
+          );
+        } catch (err) {
+          showCustomAlert(
+            "Masih Gagal",
+            `Print Bluetooth gagal (${err.message}). Anda bisa mencoba ulang atau mencetak via dialog browser.`,
+            true,
+            () => retryPrintReceipt(target),
+            () => triggerPrintStrukHtmlFallback(target),
+          );
+        }
+      }
+
+      function reprintLastReceipt() {
+        if (!lastReceiptData) {
+          showCustomAlert(
+            "Info",
+            "Belum ada transaksi yang tercetak di sesi ini.",
+            false,
+          );
+          return;
+        }
+        retryPrintReceipt(lastReceiptData);
+      }
+
+      async function testPrintBluetooth() {
+        const sampleReceipt = {
+          id: "TEST-KANTIN-58B",
+          nama: "Customer Kantin",
+          items: [
+            {
+              id: "P001",
+              nama: "Es Teh Manis",
+              harga: 5000,
+              qty: 2,
+              subtotal: 10000,
+            },
+          ],
+          total: 10000,
+          bayar: 20000,
+          kembalian: 10000,
+          dicetakPada: new Date().toLocaleString("id-ID"),
+        };
+
+        if (!btState.connected) {
+          await connectBluetoothPrinter(true);
+        }
+
+        try {
+          await executePrintStruk(sampleReceipt, false);
+          showCustomAlert(
+            "Tes Print Berhasil",
+            `Struk uji (1 rangkap) dikirim ke ${btState.deviceName}.`,
+            false,
+          );
+        } catch (err) {
+          showCustomAlert("Tes Print Gagal", err.message, true, () =>
+            testPrintBluetooth(),
+          );
+        }
       }
     </script>
   </body>
